@@ -1,31 +1,30 @@
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.PriorityQueue;
 import java.util.Scanner;
 
-/*
-    Algoritmo A* para solucuionar o Jogo dos 15
-    Nome: Gustavo Mendonça Dias     RA: 88410
-*/
-
 class Main {
-    public static void main(String[] args) {
-        aEstrela a = new aEstrela();
-        
-        a.entradaDados();
-        
-        a.aEstrela();
-        
-    }
-    
-    static class Matriz{
+
+	public static void main(String[] args) {
+		Scanner leitor = new Scanner(System.in);
+		int[][] entrada = new int[4][4];
+		
+		for(int i = 0; i < 4; i++){
+            for(int j = 0; j < 4; j++){
+                entrada[i][j] = leitor.nextInt();
+            }
+        }
+		Estrela a = new Estrela();
+		a.aEstrela(entrada);
+	}
+	
+	static class Matriz implements Comparable<Matriz>{
         private int[][] matriz = new int[4][4];
         private int h = 0;
         private int g = 0;
         private int f = 0;
-        
-        private Matriz pai = null;
+        private String id;
+        Matriz pai;
 
         public int[][] getMatriz() {
             return matriz;
@@ -58,132 +57,174 @@ class Main {
         public void setF(int f) {
             this.f = f;
         }
-
-        public Matriz getPai() {
-            return pai;
-        }
-
-        public void setPai(Matriz pai) {
-            this.pai = pai;
-        }
         
+        public String getId() {
+			return id;
+		}
         
+        public void setId(String id) {
+			this.id = id;
+		}
+
+		@Override
+		public int compareTo(Matriz arg0) {
+            return this.f - arg0.f;
+		}
 
     }
-    
-    static class aEstrela{
-//        HashMap<String, Matriz> estadosAbertos = new HashMap<String, Matriz>();
-//        HashMap<String, Matriz> estadosFechados = new HashMap<String, Matriz>();
-        Queue<Matriz> estadosIniciais = new LinkedList<Matriz>();
-        ArrayList<Matriz> estadosFinais = new ArrayList<Matriz>();
-        ArrayList<Matriz> estadosAbertos = new ArrayList<Matriz>();
-        ArrayList<Matriz> estadosFechados = new ArrayList<Matriz>();
-        
-        
-        Scanner leitor = new Scanner(System.in);
-        private int[][] resultadoEsperado = {{4, 3, 2, 1}, {5, 6, 7, 8}, {12, 11, 10, 9}, {13, 14, 15, 0}};
-        private int[][] entrada = new int[4][4];
-        private int[][] entradaAux = new int[4][4];
-        int h = 0;
+	
+	static class Estrela{
+		private int[][] resultadoEsperado = {{4, 3, 2, 1}, {5, 6, 7, 8}, {12, 11, 10, 9}, {13, 14, 15, 0}};
+		Long tempoInicio = System.currentTimeMillis();
+		
+		public void aEstrela(int[][] entrada){    
+			PriorityQueue<Matriz> filaPrioridade = new PriorityQueue<Matriz>();
+			HashMap<String, Matriz> estadosAbertos = new HashMap<>(); 
+	        HashMap<String, Matriz> estadosFechados = new HashMap<>();
+	        
+	        Matriz matriz = new Matriz();
+	        matriz.setMatriz(entrada);
+	        matriz.setG(0);
+	        matriz.setH(heuristicaTres(entrada));
+	        matriz.setF(matriz.getG() + matriz.getH());
+	        matriz.setId(gerarId(matriz));
+	        
+	        estadosAbertos.put(matriz.id, matriz);
+	        
+	        while (matriz != null && !comparaResultado(matriz.matriz) && (System.currentTimeMillis()-tempoInicio) < 9500) {
+	            estadosFechados.put(matriz.id, matriz);
+	            estadosAbertos.remove(matriz.id);
+	            
+	            ArrayList<Matriz> estadosFilhos = geraFilhos(matriz);
 
-        public aEstrela() {
-        }
-        
-        public void aEstrela(){            
-            Matriz matriz = new Matriz();
-            matriz.setMatriz(entrada);
-            matriz.setH(heuristicaUm(entrada));
-            matriz.setF(matriz.getH() + matriz.getG());
-            int max = matriz.getF();
-            
-            //estadosAbertos.put("Teste", matriz);
-            estadosAbertos.add(matriz);
-            
-            while(!estadosAbertos.isEmpty()){
-                matriz = estadosAbertos.get(0);
-                printaResult(matriz.getMatriz());
-               
-                if(comparaResultado(matriz.getMatriz())){
-                    System.out.println(estadosAbertos.get(0).getF());
-                    return;
-                }
-                try{
-                    if(estadosAbertos.get(0).getH() == 0){
-                        System.out.println(estadosAbertos.get(0).getF());
-                        return;
-                    }
-                }
-                catch (IndexOutOfBoundsException ex){
-                    
-                }
-                
-                // ESTOU PARADO AQUI NUM LOOP INFINITO POIS PRECISO DE UMA FILA DE PRIORIDADES
-                
-                //estadosFechados.put("Teste", matriz);
-                estadosFechados.add(matriz);
-                
-                if(estadosAbertos.get(0).getF() <= max){
-                    estadosAbertos.addAll(geraFilhos(matriz));
-                    estadosAbertos.remove(matriz);
-                }
-                else{
-                    estadosAbertos.remove(matriz);
-                }     
-            }
-            System.out.println(max);
-        }
-        
-        public void entradaDados(){
+	            for (int i = 0; i < estadosFilhos.size(); i++) {
+	 
+	            	Matriz matrizFilha = estadosFilhos.get(i);
+	                Matriz pertenceAberto = estadosAbertos.get(matrizFilha.id);
+	                Matriz pertenceFechado = estadosFechados.get(matrizFilha.id);
+	                
+	                if (pertenceAberto != null && matrizFilha.g < pertenceAberto.g) {
+	                    estadosAbertos.remove(matrizFilha.id);
+	                    
+	                    if (filaPrioridade.contains(matrizFilha)) {
+	                        filaPrioridade.remove(matrizFilha);
+	                    }
+	                }
+	                
+	                if (pertenceAberto == null && pertenceFechado == null) {
+	                	matrizFilha.setH(heuristicaTres(matrizFilha.getMatriz()));
+	                	matrizFilha.setG(matriz.getG()+1);
+	                	matrizFilha.setF(matrizFilha.getG() + matrizFilha.getH());
+	                    estadosAbertos.put(matrizFilha.id, matrizFilha);
+	                    filaPrioridade.add(matrizFilha);
+	                }
+	            }
+	            matriz = filaPrioridade.remove();
+	        }
+	        System.out.print(matriz.f);
+	    }
+		
+		public int heuristicaUm(int[][] entrada){
+        	int contador = 0;
             for(int i = 0; i < 4; i++){
                 for(int j = 0; j < 4; j++){
-                    entrada[i][j] = leitor.nextInt();
-                }
-            }
-        }
-
-        public int heuristicaUm(int[][] matriz){
-            h = 0;
-            for(int i = 0; i < 4; i++){
-                for(int j = 0; j < 4; j++){
-                    if (matriz[i][j] != resultadoEsperado[i][j]){
-                        h++;
+                    if (entrada[i][j] != resultadoEsperado[i][j]){
+                    	contador++;
                     }
                 }
             }
-            return h;
+            return contador;
+        }
+		
+		public int heuristicaDois(int[][] entrada) {
+			int contador = 0;
+			int[] vetorEntrada = new int[16];
+			int aux = 0;
+			for(int i = 0; i < 4; i++){
+                if(i%2 == 0) {
+                	for(int j = 3; j >= 0; j--){
+                    	vetorEntrada[aux] = entrada[i][j];
+                    	aux++;
+                    }
+                }
+                else {
+                	for(int j = 0; j < 4; j++) {
+                		vetorEntrada[aux] = entrada[i][j];
+                		aux++;
+                	}
+                }
+			}
+			for(int i = 0; i < 15; i++) {
+				if(vetorEntrada[i]+1 != vetorEntrada[i+1] && vetorEntrada[i] != 0) {
+					contador++;
+				}
+			}
+			return contador-1;
+		}
+        
+        public int heuristicaTres(int[][] entrada) {
+        	int contador = 0;
+        	int[] posI = new int[16];
+        	int[] posJ = new int[16];
+        	for(int i = 0; i < 4; i++){
+        		for(int j = 0; j < 4; j++) {
+        			posI[resultadoEsperado[i][j]] = i;
+        			posJ[resultadoEsperado[i][j]] = j;
+        		}
+        	}
+        	
+        	for(int i = 0; i < 4; i++){
+        		for(int j = 0; j < 4; j++) {
+        			if(entrada[i][j] != 0) {
+	        			contador += Math.abs(i - posI[entrada[i][j]]) + Math.abs(j - posJ[entrada[i][j]]);
+        			}
+        		}
+        	}
+        	return contador;
         }
         
-        public boolean comparaResultado(int[][] matriz){
+        public int heuristicaQuatro(int[][] entrada) {
+        	return (int) (0.07 * heuristicaUm(entrada) + 0.07 * heuristicaDois(entrada) + 0.86 * heuristicaTres(entrada));
+        }
+        
+        public int heuristicaCinco(int[][] entrada) {
+        	int max = Math.max(heuristicaUm(entrada), heuristicaDois(entrada));
+        	return Math.max(heuristicaTres(entrada), max);
+        }
+        
+        public boolean comparaResultado(int[][] entrada){
             for(int i = 0; i < 4; i++){
                 for(int j = 0; j < 4; j++){
-                    if (matriz[i][j] != resultadoEsperado[i][j]){
+                    if (entrada[i][j] != resultadoEsperado[i][j]){
                         return false;
                     }
                 }
             }
             return true;
-        }        
+        }       
         
-        public void printaResult(int[][] matriz){
+        public void printaResult(int[][] entrada){
             System.out.println("------------------");
             for(int i = 0; i < 4; i++){
                 System.out.print("| ");
                 for(int j = 0; j < 4; j++){
-                    System.out.print(matriz[i][j] + " | ");
+                    System.out.print(entrada[i][j] + " | ");
                 }
                 System.out.println("\n------------------");
             }
         }
         
-        public void geraNovaMatriz(int [][] matriz){
-            for(int i = 0; i < 4; i++){
-                for(int j = 0; j < 4; j++){
-                    entradaAux[i][j] = matriz[i][j];
+        public static String gerarId(Matriz entrada) {
+            String id = "";
+            for (int i = 0; i < 4; i++) {
+                for (int j = 0; j < 4; j++) {
+                    id += entrada.matriz[i][j];
                 }
             }
+            return id;
         }
-        
-        public ArrayList<Matriz> geraFilhos(Matriz pai){
+		
+		public ArrayList<Matriz> geraFilhos(Matriz pai){
             ArrayList<Matriz> estados = new ArrayList<>();
             int aux = 0;
             int[][] matriz = new int[4][4];
@@ -221,9 +262,7 @@ class Main {
                             aux = teste.matriz[i][j];
                             teste.matriz[i][j] = teste.matriz[i-1][j];
                             teste.matriz[i-1][j] = aux;
-                            teste.setH(heuristicaUm(teste.getMatriz()));
-                            teste.setG(pai.getG()+1);
-                            teste.setF(teste.getG() + teste.getH());
+                            teste.id = gerarId(teste);
                             estados.add(teste);
                         }
                         if(baixo){
@@ -236,9 +275,7 @@ class Main {
                             aux = teste2.matriz[i][j];
                             teste2.matriz[i][j] = teste2.matriz[i+1][j];
                             teste2.matriz[i+1][j] = aux;
-                            teste2.setH(heuristicaUm(teste2.getMatriz()));
-                            teste2.setG(pai.getG()+1);
-                            teste2.setF(teste2.getG() + teste2.getH());
+                            teste2.id = gerarId(teste2);
                             estados.add(teste2);
                         }
                         if(esquerda){
@@ -251,9 +288,7 @@ class Main {
                             aux = teste3.matriz[i][j];
                             teste3.matriz[i][j] = teste3.matriz[i][j-1];
                             teste3.matriz[i][j-1] = aux;
-                            teste3.setH(heuristicaUm(teste3.getMatriz()));
-                            teste3.setG(pai.getG()+1);
-                            teste3.setF(teste3.getG() + teste3.getH());
+                            teste3.id = gerarId(teste3);
                             estados.add(teste3);
                         }
                         if(direita){
@@ -266,9 +301,7 @@ class Main {
                             aux = teste4.matriz[i][j];
                             teste4.matriz[i][j] = teste4.matriz[i][j+1];
                             teste4.matriz[i][j+1] = aux;
-                            teste4.setH(heuristicaUm(teste4.getMatriz()));
-                            teste4.setG(pai.getG()+1);
-                            teste4.setF(teste4.getG() + teste4.getH());
+                            teste4.id = gerarId(teste4);
                             estados.add(teste4);
                         }
                         
@@ -278,5 +311,5 @@ class Main {
             }
             return estados;
         }
-    }
+	}
 }
