@@ -1,25 +1,50 @@
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.PriorityQueue;
 import java.util.Scanner;
 
 class Main {
+	
+	private static int tamanhoProblema = 64;
 
 	public static void main(String[] args) {
 		Scanner leitor = new Scanner(System.in);
-		int[][] entrada = new int[4][4];
+		int[][] entrada = new int[tamanhoProblema][tamanhoProblema];
 		
-		for(int i = 0; i < 4; i++){
-            for(int j = 0; j < 4; j++){
+		for(int i = 0; i < tamanhoProblema; i++){
+            for(int j = 0; j < tamanhoProblema; j++){
                 entrada[i][j] = leitor.nextInt();
             }
         }
+		
+		long start = System.currentTimeMillis();
+		
 		Estrela a = new Estrela();
 		a.aEstrela(entrada);
+		
+        System.out.println("Tempo em ms: " + (System.currentTimeMillis() - start));
+        System.out.println("Memoria Usada: "
+		+ new DecimalFormat("#.##").format(
+			((double) (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1048576))
+		+ "Mb");
+	}
+	
+	public static int valorEsperado(int i, int j) {
+		int valorLinha = 0;
+		if(i > 0) {
+			valorLinha = i * tamanhoProblema;
+		}
+		int valorTotal = valorLinha + j + 1;
+		
+		if(valorTotal == tamanhoProblema*tamanhoProblema) {
+			return 0;
+		}
+		return valorTotal;
 	}
 	
 	static class Matriz implements Comparable<Matriz>{
-        private int[][] matriz = new int[4][4];
+        private int[][] matriz = new int[tamanhoProblema][tamanhoProblema];
         private int h = 0;
         private int g = 0;
         private int f = 0;
@@ -74,7 +99,6 @@ class Main {
     }
 	
 	static class Estrela{
-		private int[][] resultadoEsperado = {{4, 3, 2, 1}, {5, 6, 7, 8}, {12, 11, 10, 9}, {13, 14, 15, 0}};
 		Long tempoInicio = System.currentTimeMillis();
 		
 		public void aEstrela(int[][] entrada){    
@@ -121,14 +145,14 @@ class Main {
 	            }
 	            matriz = filaPrioridade.remove();
 	        }
-	        System.out.print(matriz.f);
+	        System.out.println("Passos: " + matriz.f);
 	    }
 		
 		public int heuristicaUm(int[][] entrada){
         	int contador = 0;
-            for(int i = 0; i < 4; i++){
-                for(int j = 0; j < 4; j++){
-                    if (entrada[i][j] != resultadoEsperado[i][j]){
+            for(int i = 0; i < tamanhoProblema; i++){
+                for(int j = 0; j < tamanhoProblema; j++){
+                    if (entrada[i][j] != valorEsperado(i, j)){
                     	contador++;
                     }
                 }
@@ -138,23 +162,23 @@ class Main {
 		
 		public int heuristicaDois(int[][] entrada) {
 			int contador = 0;
-			int[] vetorEntrada = new int[16];
+			int[] vetorEntrada = new int[tamanhoProblema*tamanhoProblema];
 			int aux = 0;
-			for(int i = 0; i < 4; i++){
+			for(int i = 0; i < tamanhoProblema; i++){
                 if(i%2 == 0) {
-                	for(int j = 3; j >= 0; j--){
+                	for(int j = tamanhoProblema-1; j >= 0; j--){
                     	vetorEntrada[aux] = entrada[i][j];
                     	aux++;
                     }
                 }
                 else {
-                	for(int j = 0; j < 4; j++) {
+                	for(int j = 0; j < tamanhoProblema; j++) {
                 		vetorEntrada[aux] = entrada[i][j];
                 		aux++;
                 	}
                 }
 			}
-			for(int i = 0; i < 15; i++) {
+			for(int i = 0; i < tamanhoProblema*tamanhoProblema-1; i++) {
 				if(vetorEntrada[i]+1 != vetorEntrada[i+1] && vetorEntrada[i] != 0) {
 					contador++;
 				}
@@ -164,17 +188,17 @@ class Main {
         
         public int heuristicaTres(int[][] entrada) {
         	int contador = 0;
-        	int[] posI = new int[16];
-        	int[] posJ = new int[16];
-        	for(int i = 0; i < 4; i++){
-        		for(int j = 0; j < 4; j++) {
-        			posI[resultadoEsperado[i][j]] = i;
-        			posJ[resultadoEsperado[i][j]] = j;
+        	int[] posI = new int[tamanhoProblema*tamanhoProblema];
+        	int[] posJ = new int[tamanhoProblema*tamanhoProblema];
+        	for(int i = 0; i < tamanhoProblema; i++){
+        		for(int j = 0; j < tamanhoProblema; j++) {
+        			posI[valorEsperado(i,j)] = i;
+        			posJ[valorEsperado(i,j)] = j;
         		}
         	}
         	
-        	for(int i = 0; i < 4; i++){
-        		for(int j = 0; j < 4; j++) {
+        	for(int i = 0; i < tamanhoProblema; i++){
+        		for(int j = 0; j < tamanhoProblema; j++) {
         			if(entrada[i][j] != 0) {
 	        			contador += Math.abs(i - posI[entrada[i][j]]) + Math.abs(j - posJ[entrada[i][j]]);
         			}
@@ -193,9 +217,9 @@ class Main {
         }
         
         public boolean comparaResultado(int[][] entrada){
-            for(int i = 0; i < 4; i++){
-                for(int j = 0; j < 4; j++){
-                    if (entrada[i][j] != resultadoEsperado[i][j]){
+            for(int i = 0; i < tamanhoProblema; i++){
+                for(int j = 0; j < tamanhoProblema; j++){
+                    if (entrada[i][j] != valorEsperado(i, j)){
                         return false;
                     }
                 }
@@ -205,9 +229,9 @@ class Main {
         
         public void printaResult(int[][] entrada){
             System.out.println("------------------");
-            for(int i = 0; i < 4; i++){
+            for(int i = 0; i < tamanhoProblema; i++){
                 System.out.print("| ");
-                for(int j = 0; j < 4; j++){
+                for(int j = 0; j < tamanhoProblema; j++){
                     System.out.print(entrada[i][j] + " | ");
                 }
                 System.out.println("\n------------------");
@@ -216,8 +240,8 @@ class Main {
         
         public static String gerarId(Matriz entrada) {
             String id = "";
-            for (int i = 0; i < 4; i++) {
-                for (int j = 0; j < 4; j++) {
+            for (int i = 0; i < tamanhoProblema; i++) {
+                for (int j = 0; j < tamanhoProblema; j++) {
                     id += entrada.matriz[i][j];
                 }
             }
@@ -227,11 +251,11 @@ class Main {
 		public ArrayList<Matriz> geraFilhos(Matriz pai){
             ArrayList<Matriz> estados = new ArrayList<>();
             int aux = 0;
-            int[][] matriz = new int[4][4];
+            int[][] matriz = new int[tamanhoProblema][tamanhoProblema];
             matriz = pai.getMatriz();
             
-            for(int i = 0; i < 4; i++){
-                for(int j = 0; j < 4; j++){
+            for(int i = 0; i < tamanhoProblema; i++){
+                for(int j = 0; j < tamanhoProblema; j++){
                     if(matriz[i][j] == 0){
 
                         boolean cima = true;
@@ -241,21 +265,21 @@ class Main {
                         if(i == 0){
                             cima = false;
                         }
-                        if(i == 3){
+                        if(i == tamanhoProblema-1){
                             baixo = false;
                         }
                         
                         if(j == 0){
                             esquerda = false;
                         }
-                        if(j == 3){
+                        if(j == tamanhoProblema-1){
                             direita = false;
                         }
                         
                         if(cima){
                             Matriz teste = new Matriz();
-                            for(int k = 0; k < 4; k++){
-                                for(int l = 0; l < 4; l++){
+                            for(int k = 0; k < tamanhoProblema; k++){
+                                for(int l = 0; l < tamanhoProblema; l++){
                                     teste.matriz[k][l] = pai.matriz[k][l];
                                 }
                             }
@@ -267,8 +291,8 @@ class Main {
                         }
                         if(baixo){
                             Matriz teste2 = new Matriz();
-                            for(int k = 0; k < 4; k++){
-                                for(int l = 0; l < 4; l++){
+                            for(int k = 0; k < tamanhoProblema; k++){
+                                for(int l = 0; l < tamanhoProblema; l++){
                                     teste2.matriz[k][l] = pai.matriz[k][l];
                                 }
                             }
@@ -280,8 +304,8 @@ class Main {
                         }
                         if(esquerda){
                             Matriz teste3 = new Matriz();
-                            for(int k = 0; k < 4; k++){
-                                for(int l = 0; l < 4; l++){
+                            for(int k = 0; k < tamanhoProblema; k++){
+                                for(int l = 0; l < tamanhoProblema; l++){
                                     teste3.matriz[k][l] = pai.matriz[k][l];
                                 }
                             }
@@ -293,8 +317,8 @@ class Main {
                         }
                         if(direita){
                             Matriz teste4 = new Matriz();
-                            for(int k = 0; k < 4; k++){
-                                for(int l = 0; l < 4; l++){
+                            for(int k = 0; k < tamanhoProblema; k++){
+                                for(int l = 0; l < tamanhoProblema; l++){
                                     teste4.matriz[k][l] = pai.matriz[k][l];
                                 }
                             }
